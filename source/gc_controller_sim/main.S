@@ -27,16 +27,47 @@ init_controller_sim:
         ldr r1, =0xe000e180                     // unsure how necessary disabling interrupts actually is, but
         str r0, [r1]                            //   just to be on the safe side...
 
-        bl clear_packet_buffer
-
-        // set state? if necessary later
-
 init_read:
         movs r0, 28                             // set gpio pin 28 direction to in
         movs r1, 0
         bl gpio_set_direction
-        
 
+        bl clear_packet_buffer
+
+        // set state? if necessary later
+
+loop_read:
+        // read gpio pin 28
+
+        // wait for bit start (pin is low)
+
+        // sleep_for_cycles
+
+        // latch bit
+
+        // check if packet size is 9 bits (1 byte + stop bit):
+        // - check if current packet is valid (only the probe is 9 bits)
+        //   - if yes: print packet (DEBUG?) and send probe response
+        //   - modify WRITE_STATE
+        // - otherwise do nothing, continue reading packet (skip 25 bit check, obviously)
+
+        // check if packet size is 25 bits (3 bytes + stop bit):
+        // - check if poll received
+        //   - if yes and origin: send origin response and modify WRITE_STATE
+        //   - if yes and poll: send poll response (will later change to sending controller state)
+        // - otherwise, print and discard this packet (modify WRITE_STATE), then jump to loop_read
+
+        // NOTE: sending states might need to be delayed (either delayed for cycles or moved to after waiting for pin end, depending on timing/optimization)
+
+        // if packet size is not 9 or 25 bits, or if 9 bits and invalid probe, continue here
+
+        // THIS COULD BE READ_STATE 1
+        // wait for bit end (pin is high)
+
+        // set READ_STATE?
+        // jump to loop_read
+
+// used for calling printf to print the packet to uart
 PRINT_PACKET_STRING: .asciz "0x%08X\n"
 
 .data
