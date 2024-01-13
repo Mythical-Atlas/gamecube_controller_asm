@@ -1,0 +1,11 @@
+{
+    "cmake.environment": {
+        "PICO_SDK_PATH": "${env:PICO_SDK_PATH}",
+    },
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "cortex-debug.openocdPath": "C:/Users/ben/Desktop/openocd-esp32/bin/openocd.exe",
+    "cortex-debug.gdbPath": "arm-none-eabi-gdb",
+    "files.associations": {
+        "*S": "asm"
+    }
+}

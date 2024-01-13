@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:source">
+   </FileRef>
+   <FileRef
+      location = "group:CMakeLists.txt">
+   </FileRef>
+   <FileRef
+      location = "group:deploy.sh">
+   </FileRef>
+   <FileRef
+      location = "group:README.md">
+   </FileRef>
+</Workspace>
