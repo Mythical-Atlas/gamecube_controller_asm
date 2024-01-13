@@ -5,36 +5,25 @@
 // this could be better optimized later, if needed
 
 /*  Name:           clear_packet_buffer
-    Registers:      r0-r1
+    Registers Used: r0-r1
+    Parameters:     None
     Description:    Clears the packet read buffer.
 */
 .global clear_packet_buffer
 clear_packet_buffer:
-        ldr r0, =PACKET_BUFFER                  // clear the entire buffer at once (assumes the packet buffer is exactly 4 bytes)
         movs r1, #0
+
+        ldr r0, =PACKET_BUFFER                  // clear the entire buffer at once (assumes the packet buffer is exactly 4 bytes)
         str r1, [r0]
 
-        bx lr                                   // return
-
-// uses r0-r3
-// will be necessary if we go back to a buffer that's not 4 bytes
-/*
-        ldr r0, =PACKET_BUFFER                  // buffer address
-        movs r1, #0                             // offset counter
-        movs r2, #0                             // used to store 0x00s in memory
-    
-clear_packet_buffer_loop:                       // loop until the buffer is cleared
-        strb r2, [r0, r1]                       // clear the byte in memory
-        adds r1, r1, #1                         // increment counter
-
-        cmp r1, PACKET_BUFFER_SIZE
-        bne clear_packet_buffer_loop            // loop until the buffer is cleared
+        ldr r0, =PACKET_BITS
+        strb r1, [r0]                           // resets the bit counter for the packet to 0
 
         bx lr                                   // return
-*/
 
 /*  Name:           print_packet
-    Registers:      r0-r1
+    Registers Used: r0-r1
+    Parameters:     None
     Description:    Prints the contents of the packet read buffer over UART.
 */
 .global print_packet
@@ -48,3 +37,28 @@ print_packet:
         bl printf
 
         pop {pc}                                // return
+
+/*  Name:           sleep_for_cycles
+    Registers Used: r0-r1
+    Parameters:     r0: the number of cycles to delay for
+    Description:    Stops thread execution for a number of cycles.
+*/
+sleep_for_cycles:
+        ldr r1, =0xe000e014                     // load the address of the systick reload value register
+        str r0, [r1]                            // sets the number of cycles to delay
+
+        ldr r1, =0xe000e010                     // load the address of the systick control and status register
+
+sleep_for_cycles_loop:                          // loop until a number of cycles elapses
+        ldr r0, [r1]                            // get the systick status
+        lsrs r0, 16                             // the bit we want to read is bit 16
+        beq sleep_for_cycles_loop               // loop until a number of cycles elapses
+
+        movs r0, #4                             // stop the systick counter
+        ldr r1, =0xe000e010
+        str r0, [r1]
+
+        ldr r1, =0xe000e018                     // load the address of the systick current value register
+        str r0, [r1]                            // reset the systick counter to 0 (writing any value to this register works)
+
+        bx lr                                   // return
