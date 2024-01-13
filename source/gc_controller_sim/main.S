@@ -1,55 +1,59 @@
-#include "info_macro.S"
-
-.equ    LED_PIN,        25
-.equ    GPIO_DIR_IN,    0
-.equ    GPIO_DIR_OUT,   1
-.equ    PIN_HIGH,       1
-.equ    PIN_LOW,        0
+#include "macro_functions.S"
 
 .syntax unified
 .thumb_func
 
-.global start_blinking_led
-start_blinking_led:  
-        bl stdio_init_all           // Jump to SDK STDIO initialisation routine
-        movs r0, #0x80              // Set the delay period
-        lsls r0, #4
-        bl sleep_ms                 // Delay to allow the STDIO-over-USB to ready
+.equ PACKET_BUFFER_SIZE,        4               // we should only ever need to read a maximum of 25 bits (3 bytes + a stop bit) from the gamecube
+                                                // also, this is a very convenient size for checking the packet (it's the size of a register)
+.equ PROBE_RESPONSE_SIZE,       25              // size includes stop bit
+.equ ORIGIN_RESPONSE_SIZE,      81              // size includes stop bit
+.equ POLL_RESPONSE,             65              // size includes stop bit
 
-        movs r0, #LED_PIN           // Set the pin number
-        bl gpio_init                // Jump to SDK GPIO initialisation routine
+.global init_controller_sim
+init_controller_sim:
+        bl stdio_init_all                       // needed to use printf
 
-        movs r0, #LED_PIN           // Set the pin number
-        movs r1, #GPIO_DIR_OUT      // Set the pin direction
-        bl gpio_set_direction       // Jump to SDK pin direction routine
+        movs r0, 28                             // init gpio pin 28
+        bl gpio_init
 
-        print_cpu_info              // Jump to the CPU info readout
+        movs r0, #1                             // disable interrupts
+        ldr r1, =0xe000e180                     // unsure how necessary this actually is, but
+        str r0, [r1]                            // just to be on the safe side...
 
-loop:
-        movs r0, #LED_PIN           // Set the pin number
-        movs r1, #PIN_HIGH          // Set the pin state
-        bl gpio_set_state           // Jump to SDK pin state routine
+        
 
-        ldr r0, DELAY_TIME_MS       // Set the delay period
-                                    // NOTE This form assembles as PC offset addressing,
-                                    //      so make sure DELAY_TIME_MS is an address in the
-                                    //      code space rather not the .data space
-        bl sleep_ms                 // Delay
+PRINT_PACKET_STRING: .asciz "0x%08X\n"
 
-        movs r0, #LED_PIN           // Set the pin number
-        movs r1, #PIN_LOW           // Set the pin state
-        bl gpio_set_state           // Jump to SDK pin state routine
+.data
+PACKET_BUFFER:  .fill PACKET_BUFFER_SIZE, 1, 0  // reserve memory for reading a packet from the gamecube
+READ_STATE:     .byte 0                         // current state of packet-reading state machine
+WRITE_STATE:    .byte 0                         // what have we sent to the gamecube?
 
-        ldr r0, DELAY_TIME_MS       // Set the delay period
-        bl sleep_ms                 // Delay
+// length: 25 bits (including stop bit)
+PROBE_RESPONSE:         .byte 0b00001001        // response
+                        .byte 0b00000000
+                        .byte 0b00000011
+                        .byte 0b10000000        // stop bit
 
-        b loop                      // Loop infinitely
+// length: 81 bits (including stop bit)
+ORIGIN_RESPONSE:        .byte 0b00000000        // 0, 0, 0, start, y, x, b, a
+                        .byte 0b10000000        // 1, l, r, z, d-up, d-down, d-right, d-left
+                        .byte 0b10000000        // joy x (128 -> center)
+                        .byte 0b10000000        // joy y (128 -> center)
+                        .byte 0b10000000        // c x (128 -> center)
+                        .byte 0b10000000        // c y (128 -> center)
+                        .byte 0b00000000        // left trigger (0 -> off)
+                        .byte 0b00000000        // right trigger (0 -> off)
+                        .byte 0, 0              // null bytes
+                        .byte 0b10000000        // stop bit
 
-.align 4
-DELAY_TIME_MS:  .word           500
-CPUID:          .word           0xE000ED00          // Memory map address of CPUID register
-TEXT0:          .asciz          "CPUID: 0x%08X\n"
-TEXT1:          .asciz          "Part:  0x%08X\n"
-TEXT2:          .asciz          "Rev:   0x%08X\n"
-TEXT3:          .asciz          "Var:   0x%08X\n"
-TEXT4:          .asciz          "MATCH\n"
+// length: 65 bits (including stop bit)
+POLL_RESPONSE:          .byte 0b00000000        // 0, 0, 0, start, y, x, b, a
+                        .byte 0b10000000        // 1, l, r, z, d-up, d-down, d-right, d-left
+                        .byte 0b10000000        // joy x (128 -> center)
+                        .byte 0b10000000        // joy y (128 -> center)
+                        .byte 0b10000000        // c x (128 -> center)
+                        .byte 0b10000000        // c y (128 -> center)
+                        .byte 0b00000000        // left trigger (0 -> off)
+                        .byte 0b00000000        // right trigger (0 -> off)
+                        .byte 0b10000000        // stop bit

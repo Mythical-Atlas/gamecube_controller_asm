@@ -1,6 +1,6 @@
-extern void start_blinking_led();
+extern void init_controller_sim();
 
 void main()
 {
-	start_blinking_led();
+	init_controller_sim();
 }

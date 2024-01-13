@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.14)
 add_executable(asm_test
 	${CMAKE_SOURCE_DIR}/source/asm_test/main.c
 	${CMAKE_SOURCE_DIR}/source/asm_test/main.S
-	#${CMAKE_SOURCE_DIR}/source/asm_test/info_macro.S
+	${CMAKE_SOURCE_DIR}/source/asm_test/info_macro.S
 	${COMMON_SRC_DIRECTORY}/sdk_inlines.c
 )
 
