@@ -17,10 +17,9 @@
 .equ RS_WAITING_FOR_BIT_END_WRITE,  2
 
 // write state machine states
-.equ WS_SENT_NOTHING,               0
-.equ WS_SENT_PROBE_RESPONSE,        1
-.equ WS_SENT_ORIGIN_RESPONSE,       2
-.equ WS_SENT_POLL_RESPONSE,         3
+.equ WS_SEND_PROBE_RESPONSE,    0
+.equ WS_SEND_ORIGIN_RESPONSE,   1
+.equ WS_SEND_POLL_RESPONSE,     2
 
 // timeing
 .equ CYCLES_TO_WAIT_BEFORE_LATCH, 150
@@ -89,7 +88,7 @@ check_waiting_bit_end_write:                    // note: at this point it can be
         // note: READ_STATE does not need to be reset here because the
         //   write process will jump to INIT_READ when it finishes
 
-        //b init_write // UNIMPLEMENTED
+        b init_write
 
 latch_bit:
         movs r0, #28                            // read gpio pin 28
@@ -116,15 +115,11 @@ latch_bit:
         adds r1, r1, #1
         strb r1, [r5]
 
-check_receieved_probe:
-        // TODO: unsure if we even need to check it we've received 9 bits
-        //cmp r1, #9
-        //bne check_received_origin_or_poll
-       
+check_receieved_probe:       
         ldr r3, [r2]                            // check if the packet buffer contains 0x8000 (0x00 followed by a stop bit)
         ldr r4, =0x8000
         cmp r3, r4
-        bne check_received_origin_or_poll
+        bne check_received_origin
 
         // we've recieved a probe!
 
@@ -134,19 +129,50 @@ check_receieved_probe:
         bl print_packet
         bl clear_packet_buffer
 
-        b finish_packet_checks_read
+        movs r0, #WS_SEND_PROBE_RESPONSE        // set write state to send a probe response after end of bit
+        ldr r1, =WRITE_STATE
+        strb r0, [r1]
 
-        // if yes: we have 9 bits and should check if we have receieved a probe
-        // if no: jump to checking if it is 25 bits
+        b finish_packet_checks_write
 
-check_received_origin_or_poll:
-        // DEBUG
-        cmp r1, #9
-        bne finish_packet_checks_read // less than 9
+check_received_origin:
+        ldr r4, =0x8041                         // check if the packet buffer contains 0x8041 (0x41 followed by a stop bit)
+        cmp r3, r4
+        beq packet_buffer_is_origin
 
-        movs r1, #0                             // reset the bit/byte counter
-        strb r1, [r5]
+check_received_poll:
+        cmp r1, #25                             // check if we've read 25 bits
+        bne finish_packet_checks_read           // jump if less than 25 (it will never be more than 25)
 
+        // we've read 25 bits!
+
+        ldr r4, =0x80000340                     // check if the packet buffer contains 0x40, 0x03, and 0x00 followed by a stop bit
+        cmp r3, r4                              // TODO: lower two bits are rumble, and are not taken into account
+        beq packet_buffer_is_poll
+
+        b packet_buffer_is_garbage
+
+packet_buffer_is_origin:
+        bl print_packet
+        bl clear_packet_buffer
+
+        movs r0, #WS_SEND_PROBE_RESPONSE        // set write state to send a probe response after end of bit
+        ldr r1, =WRITE_STATE
+        strb r0, [r1]
+
+        b finish_packet_checks_write
+
+packet_buffer_is_poll:
+        bl print_packet
+        bl clear_packet_buffer
+
+        movs r0, #WS_SEND_POLL_RESPONSE         // set write state to send a probe response after end of bit
+        ldr r1, =WRITE_STATE
+        strb r0, [r1]
+
+        b finish_packet_checks_write
+
+packet_buffer_is_garbage:
         bl print_packet
         bl clear_packet_buffer
 
@@ -158,30 +184,15 @@ finish_packet_checks_read:
         strb r0, [r1]
         b loop_read
 
-        // if yes: the packet is either a origin/poll request, or it is garbage
-        // if no: the packet is smaller than 25 bits, so keep reading (reset READ_STATE and jump to LOOP_READ)
+finish_packet_checks_write:
+        movs r0, #RS_WAITING_FOR_BIT_END_WRITE  // set read state to wait, then write
+        ldr r1, =READ_STATE
+        strb r0, [r1]
+        b loop_read
 
-        // check if packet size is 9 bits (1 byte + stop bit):
-        // - check if current packet is valid (only the probe is 9 bits)
-        //   - if yes: print packet (DEBUG?) and send probe response
-        //   - modify WRITE_STATE
-        // - otherwise do nothing, continue reading packet (skip 25 bit check, obviously)
-
-        // check if packet size is 25 bits (3 bytes + stop bit):
-        // - check if poll received
-        //   - if yes and origin: send origin response and modify WRITE_STATE
-        //   - if yes and poll: send poll response (will later change to sending controller state)
-        // - otherwise, print and discard this packet (modify WRITE_STATE), then jump to loop_read
-
-        // NOTE: sending states might need to be delayed (either delayed for cycles or moved to after waiting for pin end, depending on timing/optimization)
-
-        // if packet size is not 9 or 25 bits, or if 9 bits and invalid probe, continue here
-
-        // THIS COULD BE READ_STATE 1
-        // wait for bit end (pin is high)
-
-        // set READ_STATE?
-        // jump to loop_read
+init_write:
+        b init_read
+loop_write:
 
 // used for calling printf to print the packet to uart
 PRINT_PACKET_STRING: .asciz "0x%08X\n"
