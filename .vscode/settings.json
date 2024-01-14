@@ -7,5 +7,6 @@
     "cortex-debug.gdbPath": "arm-none-eabi-gdb",
     "files.associations": {
         "*S": "asm"
-    }
+    },
+    "cortex-debug.variableUseNaturalFormat": false
 }

@@ -47,7 +47,9 @@ sleep_for_cycles:
         ldr r1, =0xe000e014                     // load the address of the systick reload value register
         str r0, [r1]                            // sets the number of cycles to delay
 
-        ldr r1, =0xe000e010                     // load the address of the systick control and status register
+        movs r0, #5                             // start the systick counter
+        ldr r1, =0xe000e010
+        str r0, [r1]
 
 sleep_for_cycles_loop:                          // loop until a number of cycles elapses
         ldr r0, [r1]                            // get the systick status
@@ -55,7 +57,6 @@ sleep_for_cycles_loop:                          // loop until a number of cycles
         beq sleep_for_cycles_loop               // loop until a number of cycles elapses
 
         movs r0, #4                             // stop the systick counter
-        ldr r1, =0xe000e010
         str r0, [r1]
 
         ldr r1, =0xe000e018                     // load the address of the systick current value register
