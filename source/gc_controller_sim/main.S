@@ -33,7 +33,7 @@
 init_controller_sim:
         bl stdio_init_all                       // needed to use printf
 
-        movs r0, #28                            // init gpio pin 28
+        movs r0, #27                            // init gpio pin 27
         bl gpio_init
 
         movs r0, #1                             // disable interrupts
@@ -88,7 +88,7 @@ POLL_RESPONSE:          .byte 0b00000000        // 0, 0, 0, start, y, x, b, a
                         .byte 0b10000000        // stop bit
 
 // length: 65 bits (including stop bit)
-POLL_RESPONSE_START:    .byte 0b00011111        // 0, 0, 0, start, y, x, b, a
+POLL_RESPONSE_START:    .byte 0b00010000        // 0, 0, 0, start, y, x, b, a
                         .byte 0b10000000        // 1, l, r, z, d-up, d-down, d-right, d-left
                         .byte 0b10000000        // joy x (128 -> center)
                         .byte 0b10000000        // joy y (128 -> center)

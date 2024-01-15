@@ -9,7 +9,7 @@ init_write:
         movs r0, #CYCLES_TO_WAIT_BEFORE_WRITE
         bl sleep_for_cycles
 
-        movs r0, #28                            // set gpio pin 28 direction to out
+        movs r0, #27                            // set gpio pin 27 direction to out
         movs r1, #1
         bl gpio_set_direction
 
@@ -24,7 +24,7 @@ init_write:
         movs r4, #0x00                          // byte/bit counter counter
 
 loop_write:
-        movs r0, 28                             // set gpio pin 28 to low
+        movs r0, 27                             // set gpio pin 27 to low
         movs r1, 0
         bl gpio_set_state
 
@@ -88,7 +88,7 @@ write_low_loop_3:
         lsrs r2, 16                             // the bit we want to read is bit 16
         beq write_low_loop_3                    // loop until a number of cycles elapses
 
-        movs r0, 28                             // set gpio pin 28 to high
+        movs r0, #27                             // set gpio pin 27 to high
         movs r1, 1
         bl gpio_set_state
 
@@ -109,7 +109,7 @@ write_high_loop_1:                               // this will likely be the quic
         lsrs r2, 16                             // the bit we want to read is bit 16
         beq write_high_loop_1                    // loop until a number of cycles elapses
 
-        movs r0, 28                             // set gpio pin 28 to high
+        movs r0, 27                             // set gpio pin 27 to high
         movs r1, 1
         bl gpio_set_state
 
