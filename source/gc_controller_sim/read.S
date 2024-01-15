@@ -90,10 +90,7 @@ check_receieved_probe:
 
         // we've recieved a probe!
 
-        movs r1, #0                             // reset the bit/byte counter
-        strb r1, [r5]
-
-        bl print_packet
+        //bl print_packet // DEBUG: no time to do this! gamecube doesn't recognize probe response if we print
         bl clear_packet_buffer
 
         movs r0, #WS_SEND_PROBE_RESPONSE        // set write state to send a probe response after end of bit
@@ -123,7 +120,7 @@ packet_buffer_is_origin:
         bl print_packet
         bl clear_packet_buffer
 
-        movs r0, #WS_SEND_PROBE_RESPONSE        // set write state to send a probe response after end of bit
+        movs r0, #WS_SEND_ORIGIN_RESPONSE       // set write state to send a probe response after end of bit
         ldr r1, =WRITE_STATE
         strb r0, [r1]
 

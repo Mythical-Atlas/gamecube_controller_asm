@@ -23,8 +23,9 @@
 .equ WS_SEND_ORIGIN_RESPONSE,   1
 .equ WS_SEND_POLL_RESPONSE,     2
 
-// timeing
+// timing
 .equ CYCLES_TO_WAIT_BEFORE_LATCH, 150
+.equ CYCLES_PER_QUARTER_BIT_WRITE, 130
 
 .global init_controller_sim
 init_controller_sim:
