@@ -11,7 +11,7 @@
 // message sizes
 .equ PROBE_RESPONSE_SIZE,       25              // size includes stop bit
 .equ ORIGIN_RESPONSE_SIZE,      81              // size includes stop bit
-.equ POLL_RESPONSE,             65              // size includes stop bit
+.equ POLL_RESPONSE_SIZE,        65              // size includes stop bit
 
 // read state machine states
 .equ RS_WAITING_FOR_BIT_START,      0
@@ -22,6 +22,7 @@
 .equ WS_SEND_PROBE_RESPONSE,    0
 .equ WS_SEND_ORIGIN_RESPONSE,   1
 .equ WS_SEND_POLL_RESPONSE,     2
+.equ WS_SEND_POLL_RESPONSE_DBG, 3
 
 // timing
 .equ CYCLES_TO_WAIT_BEFORE_LATCH, 150
@@ -54,6 +55,8 @@ PACKET_BITS:    .byte 0                         // the number of bits we've read
 READ_STATE:     .byte 0                         // current state of packet-reading state machine
 WRITE_STATE:    .byte 0                         // what have we sent to the gamecube?
 
+DEBUG_STATE:    .byte 0                         // used to simulate sending button presses
+
 // length: 25 bits (including stop bit)
 PROBE_RESPONSE:         .byte 0b00001001        // response
                         .byte 0b00000000
@@ -74,6 +77,17 @@ ORIGIN_RESPONSE:        .byte 0b00000000        // 0, 0, 0, start, y, x, b, a
 
 // length: 65 bits (including stop bit)
 POLL_RESPONSE:          .byte 0b00000000        // 0, 0, 0, start, y, x, b, a
+                        .byte 0b10000000        // 1, l, r, z, d-up, d-down, d-right, d-left
+                        .byte 0b10000000        // joy x (128 -> center)
+                        .byte 0b10000000        // joy y (128 -> center)
+                        .byte 0b10000000        // c x (128 -> center)
+                        .byte 0b10000000        // c y (128 -> center)
+                        .byte 0b00000000        // left trigger (0 -> off)
+                        .byte 0b00000000        // right trigger (0 -> off)
+                        .byte 0b10000000        // stop bit
+
+// length: 65 bits (including stop bit)
+POLL_RESPONSE_START:    .byte 0b00011111        // 0, 0, 0, start, y, x, b, a
                         .byte 0b10000000        // 1, l, r, z, d-up, d-down, d-right, d-left
                         .byte 0b10000000        // joy x (128 -> center)
                         .byte 0b10000000        // joy y (128 -> center)

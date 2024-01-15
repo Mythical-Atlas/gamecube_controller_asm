@@ -3,6 +3,9 @@
 
 .global init_write
 init_write:
+        movs r5, r0                // address
+        movs r6, r1           // size
+
         movs r0, #28                            // set gpio pin 28 direction to out
         movs r1, #1
         bl gpio_set_direction
@@ -16,8 +19,6 @@ init_write:
         str r0, [r7]
 
         movs r4, #0x00                          // byte/bit counter counter
-        ldr r5, =PROBE_RESPONSE                 // address
-        movs r6, #PROBE_RESPONSE_SIZE           // size
 
 loop_write:
         movs r0, 28                             // set gpio pin 28 to low
