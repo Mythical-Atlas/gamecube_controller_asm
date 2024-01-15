@@ -26,6 +26,7 @@
 
 // timing
 .equ CYCLES_TO_WAIT_BEFORE_LATCH, 150
+.equ CYCLES_TO_WAIT_BEFORE_WRITE, 150
 .equ CYCLES_PER_QUARTER_BIT_WRITE, 150
 
 .global init_controller_sim

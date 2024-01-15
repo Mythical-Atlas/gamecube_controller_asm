@@ -6,6 +6,9 @@ init_write:
         movs r5, r0                // address
         movs r6, r1           // size
 
+        movs r0, #CYCLES_TO_WAIT_BEFORE_WRITE
+        bl sleep_for_cycles
+
         movs r0, #28                            // set gpio pin 28 direction to out
         movs r1, #1
         bl gpio_set_direction
