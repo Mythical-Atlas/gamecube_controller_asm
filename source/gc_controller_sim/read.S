@@ -64,8 +64,8 @@ check_waiting_bit_end_write:                    // note: at this point it can be
         cmp r0, #WS_SEND_ORIGIN_RESPONSE
         beq bit_end_send_origin_response
 
-        cmp r0, #WS_SEND_POLL_RESPONSE
-        beq bit_end_send_poll_response
+        //cmp r0, #WS_SEND_POLL_RESPONSE
+        //beq bit_end_send_poll_response
 
         b bit_end_send_poll_response_dbg // DEBUG
 

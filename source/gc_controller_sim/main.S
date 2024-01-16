@@ -1,6 +1,7 @@
 #include "macro_functions.S"
 #include "read.S"
 #include "write.S"
+#include "controller.S"
 
 .syntax unified
 .thumb_func
@@ -28,6 +29,7 @@
 .equ CYCLES_TO_WAIT_BEFORE_LATCH, 150
 .equ CYCLES_TO_WAIT_BEFORE_WRITE, 150
 .equ CYCLES_PER_QUARTER_BIT_WRITE, 150
+.equ CONTROLLER_ALLOWED_CYCLES, 0x100000
 
 .global init_controller_sim
 init_controller_sim:
@@ -44,6 +46,8 @@ init_controller_sim:
 
 // used for calling printf to print the packet to uart
 PRINT_PACKET_STRING: .asciz "0x%08X\n"
+DEBUG_STR: .asciz "send me controlelr data\n"
+DEBUG_STR2: .asciz "stop sending me controlelr data\n"
 
 .data
 
@@ -88,7 +92,7 @@ POLL_RESPONSE:          .byte 0b00000000        // 0, 0, 0, start, y, x, b, a
                         .byte 0b10000000        // stop bit
 
 // length: 65 bits (including stop bit)
-POLL_RESPONSE_START:    .byte 0b00010000        // 0, 0, 0, start, y, x, b, a
+POLL_RESPONSE_START:    .byte 0b00000000        // 0, 0, 0, start, y, x, b, a
                         .byte 0b10000000        // 1, l, r, z, d-up, d-down, d-right, d-left
                         .byte 0b10000000        // joy x (128 -> center)
                         .byte 0b10000000        // joy y (128 -> center)

@@ -3,8 +3,8 @@
 
 .global init_write
 init_write:
-        movs r5, r0                // address
-        movs r6, r1           // size
+        movs r5, r0                             // address
+        movs r6, r1                             // size
 
         movs r0, #CYCLES_TO_WAIT_BEFORE_WRITE
         bl sleep_for_cycles
@@ -68,6 +68,13 @@ write_finish_packet:
         ldr r1, =0xe000e018                     // load the address of the systick current value register
         str r0, [r1]                            // reset the systick counter to 0 (writing any value to this register works)
 
+
+        cmp r6, #PROBE_RESPONSE_SIZE            // easiest way to check if we just sent a probe response
+        beq skip_controller_check
+        bl get_controller_state                 // only get controller state if we just sent an origin response or a poll response
+
+
+skip_controller_check:
         b init_read
 
 write_low:
