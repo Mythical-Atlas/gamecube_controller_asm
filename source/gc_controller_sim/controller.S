@@ -13,8 +13,8 @@ get_controller_state:
         ldr r4, =0xe000e010                     // r4: reserved for systick status reg address
         str r0, [r4]
 
-        ldr r0, =DEBUG_STR
-        bl printf
+        //ldr r0, =DEBUG_STR // DEBUG: disabled
+        //bl printf
 
         movs r5, #0 // data 1
         movs r6, #0 // data 2
@@ -76,8 +76,8 @@ eof_received:
 
         
 
-        ldr r0, =DEBUG_STR2
-        bl printf
+        //ldr r0, =DEBUG_STR2  // DEBUG: disabled
+        //bl printf
 
         ldr r1, =0xe000e018                     // load the address of the systick current value register
         str r0, [r1]                            // reset the systick counter to 0 (writing any value to this register works)

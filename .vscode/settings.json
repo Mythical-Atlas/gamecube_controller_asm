@@ -6,7 +6,11 @@
     "cortex-debug.openocdPath": "C:/Users/ben/Desktop/openocd-esp32/bin/openocd.exe",
     "cortex-debug.gdbPath": "arm-none-eabi-gdb",
     "files.associations": {
-        "*S": "asm"
+        "*.S": "arm",
+        "*S": "asm",
+        "gpio.h": "c",
+        "stdio.h": "c",
+        "string.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
 }

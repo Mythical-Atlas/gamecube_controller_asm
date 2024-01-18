@@ -3,7 +3,7 @@
 
 .global init_read
 init_read:
-        movs r0, #27                            // set gpio pin 27 direction to in
+        movs r0, #GPIO_PIN_NUMBER               // set gpio pin direction to in
         movs r1, #0
         bl gpio_set_direction
 
@@ -14,10 +14,10 @@ init_read:
         strb r0, [r1]
 
 loop_read:
-        movs r0, #27                            // read gpio pin 27
+        movs r0, #GPIO_PIN_NUMBER               // read gpio pin
         bl gpio_get_state
 
-        ldr r1, =READ_STATE                    // load read state
+        ldr r1, =READ_STATE                     // load read state
         ldrb r2, [r1]
 
 check_waiting_bit_start:
@@ -90,7 +90,7 @@ bit_end_send_poll_response_dbg:
         b init_write
 
 latch_bit:
-        movs r0, #27                            // read gpio pin 27
+        movs r0, #GPIO_PIN_NUMBER               // read gpio pin
         bl gpio_get_state
 
         ldr r5, =PACKET_BITS                    // get the byte offset for us to write to
@@ -189,7 +189,7 @@ debug_send_controller_state_1: // DEBUG
         b finish_packet_checks_write
 
 packet_buffer_is_garbage:
-        bl print_packet
+        //bl print_packet // DEBUG: disabled
         bl clear_packet_buffer
 
         b finish_packet_checks_read

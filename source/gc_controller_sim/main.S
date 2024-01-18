@@ -6,6 +6,8 @@
 .syntax unified
 .thumb_func
 
+.equ GPIO_PIN_NUMBER, 28
+
 .equ PACKET_BUFFER_SIZE,        4               // we should only ever need to read a maximum of 25 bits (3 bytes + a stop bit) from the gamecube
                                                 // also, this is a very convenient size for checking the packet (it's the size of a register)
 
@@ -31,16 +33,16 @@
 .equ CYCLES_PER_QUARTER_BIT_WRITE, 150
 .equ CONTROLLER_ALLOWED_CYCLES, 0x100000
 
-.global init_controller_sim
-init_controller_sim:
-        bl stdio_init_all                       // needed to use printf
-
-        movs r0, #27                            // init gpio pin 27
+.global controller_sim
+controller_sim:
+        movs r0, #GPIO_PIN_NUMBER               // init gpio pin
         bl gpio_init
 
+/*
         movs r0, #1                             // disable interrupts
         ldr r1, =0xe000e180                     // unsure how necessary disabling interrupts actually is, but
         str r0, [r1]                            //   just to be on the safe side...
+*/
 
         b init_read
 
@@ -92,6 +94,7 @@ POLL_RESPONSE:          .byte 0b00000000        // 0, 0, 0, start, y, x, b, a
                         .byte 0b10000000        // stop bit
 
 // length: 65 bits (including stop bit)
+.global POLL_RESPONSE_START
 POLL_RESPONSE_START:    .byte 0b00000000        // 0, 0, 0, start, y, x, b, a
                         .byte 0b10000000        // 1, l, r, z, d-up, d-down, d-right, d-left
                         .byte 0b10000000        // joy x (128 -> center)
@@ -101,3 +104,7 @@ POLL_RESPONSE_START:    .byte 0b00000000        // 0, 0, 0, start, y, x, b, a
                         .byte 0b00000000        // left trigger (0 -> off)
                         .byte 0b00000000        // right trigger (0 -> off)
                         .byte 0b10000000        // stop bit
+
+.align 4
+.global CONTROLLER_MUTEX_ASM
+CONTROLLER_MUTEX_ASM: .byte 0, 0, 0, 0, 0, 0, 0, 0 // sizeof(mutex_t) = 8

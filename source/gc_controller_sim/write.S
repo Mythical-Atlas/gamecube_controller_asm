@@ -6,10 +6,21 @@ init_write:
         movs r5, r0                             // address
         movs r6, r1                             // size
 
+        cmp r6, #POLL_RESPONSE_SIZE
+        bne skip_mutex_enter
+
+ //       ldr r0, =CONTROLLER_MUTEX_ASM
+        //movs r1, #10
+ //       bl mutex_enter_blocking
+        //cmp r0, #0
+        //bne skip_mutex_enter
+        //b init_read // mutex lock failed
+
+skip_mutex_enter:
         movs r0, #CYCLES_TO_WAIT_BEFORE_WRITE
         bl sleep_for_cycles
 
-        movs r0, #27                            // set gpio pin 27 direction to out
+        movs r0, #GPIO_PIN_NUMBER               // set gpio pin direction to out
         movs r1, #1
         bl gpio_set_direction
 
@@ -24,7 +35,7 @@ init_write:
         movs r4, #0x00                          // byte/bit counter counter
 
 loop_write:
-        movs r0, 27                             // set gpio pin 27 to low
+        movs r0, GPIO_PIN_NUMBER                // set gpio pin to low
         movs r1, 0
         bl gpio_set_state
 
@@ -68,11 +79,20 @@ write_finish_packet:
         ldr r1, =0xe000e018                     // load the address of the systick current value register
         str r0, [r1]                            // reset the systick counter to 0 (writing any value to this register works)
 
+ //      cmp r6, #POLL_RESPONSE_SIZE
+ //       bne skip_mutex_exit
 
+ //       ldr r0, =CONTROLLER_MUTEX_ASM
+ //       bl mutex_exit
+
+skip_mutex_exit:
+
+        // DEBUG: disabling this check, 
+/*
         cmp r6, #PROBE_RESPONSE_SIZE            // easiest way to check if we just sent a probe response
         beq skip_controller_check
         bl get_controller_state                 // only get controller state if we just sent an origin response or a poll response
-
+*/
 
 skip_controller_check:
         b init_read
@@ -95,7 +115,7 @@ write_low_loop_3:
         lsrs r2, 16                             // the bit we want to read is bit 16
         beq write_low_loop_3                    // loop until a number of cycles elapses
 
-        movs r0, #27                             // set gpio pin 27 to high
+        movs r0, #GPIO_PIN_NUMBER               // set gpio pin to high
         movs r1, 1
         bl gpio_set_state
 
@@ -111,27 +131,27 @@ write_high:
         // r1: used for setting gpio pin state
         // r2: used for getting systick status
         // r7: reserved systick status address
-write_high_loop_1:                               // this will likely be the quickest loop
+write_high_loop_1:                              // this will likely be the quickest loop
         ldr r2, [r7]                            // get the systick status
         lsrs r2, 16                             // the bit we want to read is bit 16
-        beq write_high_loop_1                    // loop until a number of cycles elapses
+        beq write_high_loop_1                   // loop until a number of cycles elapses
 
-        movs r0, 27                             // set gpio pin 27 to high
+        movs r0, GPIO_PIN_NUMBER                // set gpio pin to high
         movs r1, 1
         bl gpio_set_state
 
 write_high_loop_2:
         ldr r2, [r7]                            // get the systick status
         lsrs r2, 16                             // the bit we want to read is bit 16
-        beq write_high_loop_2                    // loop until a number of cycles elapses
+        beq write_high_loop_2                   // loop until a number of cycles elapses
 write_high_loop_3:
         ldr r2, [r7]                            // get the systick status
         lsrs r2, 16                             // the bit we want to read is bit 16
-        beq write_high_loop_3                    // loop until a number of cycles elapses
+        beq write_high_loop_3                   // loop until a number of cycles elapses
 
 write_high_loop_4:
         ldr r2, [r7]                            // get the systick status
         lsrs r2, 16                             // the bit we want to read is bit 16
-        beq write_high_loop_4                    // loop until a number of cycles elapses
+        beq write_high_loop_4                   // loop until a number of cycles elapses
 
         b write_finish_bit
