@@ -190,6 +190,7 @@ static void hid_host_handle_interrupt_report(const uint8_t *packet, uint16_t pac
         // 8 = neutral
     }
 
+/*
     POLL_RESPONSE_START[0] =
         (((report->buttons[1] >> 1) & 1) << 4) + // plus
         (((report->buttons[0] >> 3) & 1) << 3) + // y
@@ -208,6 +209,7 @@ static void hid_host_handle_interrupt_report(const uint8_t *packet, uint16_t pac
     POLL_RESPONSE_START[5] = 0x80;//255 - report->right_y;
     POLL_RESPONSE_START[6] = 0x00;//((report->buttons[0] >> 6) & 1) * 255; // zl (analog)
     POLL_RESPONSE_START[7] = 0x00;//((report->buttons[0] >> 7) & 1) * 255; // zr (analog)
+*/
 
     //dma_start_channel_mask(3);
 

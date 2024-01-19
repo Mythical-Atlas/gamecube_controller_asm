@@ -7,7 +7,7 @@
 
 #include "bt_hid.h"
 
-uint8_t POLL_RESPONSE_START[8];
+uint8_t POLL_RESPONSE_START[8] = {0x00, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00, 0x00};
 
 uint8_t fake_spi_rx[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -27,31 +27,40 @@ int main() {
     gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);
     gpio_set_function(PICO_DEFAULT_SPI_CSN_PIN, GPIO_FUNC_SPI);
 
-    const uint dma_rx = 0;//dma_claim_unused_channel(true);
-    const uint dma_tx = 1;//dma_claim_unused_channel(true);
+    const uint dma_rx_1 = dma_claim_unused_channel(true);
+    const uint dma_rx_2 = dma_claim_unused_channel(true);
+    const uint dma_tx_1 = dma_claim_unused_channel(true);
+    const uint dma_tx_2 = dma_claim_unused_channel(true);
 
-    dma_channel_config c = dma_channel_get_default_config(dma_rx);
+    dma_channel_config c = dma_channel_get_default_config(dma_rx_1);
     channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
     channel_config_set_dreq(&c, spi_get_dreq(spi_default, false));
     channel_config_set_read_increment(&c, false);
     channel_config_set_write_increment(&c, true);
-    dma_channel_configure(dma_rx, &c, fake_spi_rx, &spi_get_hw(spi_default)->dr, 8, false);
+    channel_config_set_chain_to(&c, dma_rx_2);
+    dma_channel_configure(dma_rx_1, &c, fake_spi_rx, &spi_get_hw(spi_default)->dr, 8, false);
 
-    /*dma_channel_set_irq0_enabled(dma_rx, true);
-    irq_set_exclusive_handler(DMA_IRQ_0, dma_handler);
-    irq_set_enabled(DMA_IRQ_0, true);*/
+    c = dma_channel_get_default_config(dma_rx_2);
+    channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
+    channel_config_set_dreq(&c, spi_get_dreq(spi_default, false));
+    channel_config_set_read_increment(&c, false);
+    channel_config_set_write_increment(&c, true);
+    channel_config_set_chain_to(&c, dma_rx_1);
+    dma_channel_configure(dma_rx_2, &c, fake_spi_rx, &spi_get_hw(spi_default)->dr, 8, false);
 
-    c = dma_channel_get_default_config(dma_tx);
+    c = dma_channel_get_default_config(dma_tx_1);
     channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
     channel_config_set_dreq(&c, spi_get_dreq(spi_default, true));
-    dma_channel_configure(dma_tx, &c, &spi_get_hw(spi_default)->dr, POLL_RESPONSE_START, 8, false);
+    channel_config_set_chain_to(&c, dma_tx_2);
+    dma_channel_configure(dma_tx_1, &c, &spi_get_hw(spi_default)->dr, POLL_RESPONSE_START, 8, false);
 
-    //dma_handler();
+    c = dma_channel_get_default_config(dma_tx_2);
+    channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
+    channel_config_set_dreq(&c, spi_get_dreq(spi_default, true));
+    channel_config_set_chain_to(&c, dma_tx_1);
+    dma_channel_configure(dma_tx_2, &c, &spi_get_hw(spi_default)->dr, POLL_RESPONSE_START, 8, false);
 
-    /*multicore_launch_core1(*/bt_main();
+    dma_start_channel_mask((1u << dma_tx_1) | (1u << dma_rx_1));
 
-    /*while(true)
-    {
-        //spi_write_blocking(spi_default, POLL_RESPONSE_START, 8);
-    }*/
+    bt_main();
 }
