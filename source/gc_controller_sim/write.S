@@ -79,17 +79,13 @@ write_finish_packet:
         ldr r1, =0xe000e018                     // load the address of the systick current value register
         str r0, [r1]                            // reset the systick counter to 0 (writing any value to this register works)
 
-/*
         cmp r6, #POLL_RESPONSE_SIZE
         bne skip_controller_check
 
         // read controller data
-        ldr r0, =0x4003c000 // spi 0
-        movs r1, #0
-        ldr r2, =POLL_RESPONSE_START
-        movs r3, #8
-        bl spi_read_blocking
-*/
+        movs r0, #3
+        ldr r1, =0x50000430
+        str r0, [r1] // start rx and tx dma channels (chan 0 and chan 1)
 
  //       ldr r0, =CONTROLLER_MUTEX_ASM
  //       bl mutex_exit

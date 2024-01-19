@@ -15,7 +15,8 @@
         "binary_info.h": "c",
         "btstack_config.h": "c",
         "multicore.h": "c",
-        "btstack.h": "c"
+        "btstack.h": "c",
+        "spi.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
 }
