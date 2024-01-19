@@ -18,7 +18,5 @@ set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 
-add_subdirectory("${CMAKE_SOURCE_DIR}/source/asm_led_sdk")
-add_subdirectory("${CMAKE_SOURCE_DIR}/source/asm_test")
 add_subdirectory("${CMAKE_SOURCE_DIR}/source/gc_controller_sim")
-add_subdirectory("${CMAKE_SOURCE_DIR}/source/bluetooth_test")
+add_subdirectory("${CMAKE_SOURCE_DIR}/source/gc_controller_bluetooth")

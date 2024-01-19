@@ -10,7 +10,10 @@
         "*S": "asm",
         "gpio.h": "c",
         "stdio.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "stdlib.h": "c",
+        "binary_info.h": "c",
+        "btstack_config.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
 }
