@@ -190,7 +190,16 @@ static void hid_host_handle_interrupt_report(const uint8_t *packet, uint16_t pac
         // 8 = neutral
     }
 
-/*
+    uint8_t left_x = report->left_x;
+    uint8_t left_y = 0xff - report->left_y;
+    uint8_t right_x = report->right_x;
+    uint8_t right_y = 0xff - report->right_y;
+
+    if(left_x > 0x60 && left_x < 0xa0) left_x = 0x80;
+    if(left_y > 0x60 && left_y < 0xa0) left_y = 0x80;
+    if(right_x > 0x60 && right_x < 0xa0) right_x = 0x80;
+    if(right_y > 0x60 && right_y < 0xa0) right_y = 0x80;
+
     POLL_RESPONSE_START[0] =
         (((report->buttons[1] >> 1) & 1) << 4) + // plus
         (((report->buttons[0] >> 3) & 1) << 3) + // y
@@ -203,13 +212,15 @@ static void hid_host_handle_interrupt_report(const uint8_t *packet, uint16_t pac
         (((report->buttons[0] >> 7) & 1) << 5) + // zr (r)
         ((((report->buttons[0] >> 4) & 1) | ((report->buttons[0] >> 5) & 1)) << 4) + // l and r
         dpad_nib;
-    POLL_RESPONSE_START[2] = 0x80;//report->left_x;
-    POLL_RESPONSE_START[3] = 0x80;//255 - report->left_y;
-    POLL_RESPONSE_START[4] = 0x80;//report->right_x;
-    POLL_RESPONSE_START[5] = 0x80;//255 - report->right_y;
-    POLL_RESPONSE_START[6] = 0x00;//((report->buttons[0] >> 6) & 1) * 255; // zl (analog)
-    POLL_RESPONSE_START[7] = 0x00;//((report->buttons[0] >> 7) & 1) * 255; // zr (analog)
-*/
+
+    POLL_RESPONSE_START[2] = left_x;
+    POLL_RESPONSE_START[3] = left_y;
+    POLL_RESPONSE_START[4] = right_x;
+    POLL_RESPONSE_START[5] = right_y;
+
+    POLL_RESPONSE_START[6] = ((report->buttons[0] >> 6) & 1) * 255; // zl (analog)
+    POLL_RESPONSE_START[7] = ((report->buttons[0] >> 7) & 1) * 255; // zr (analog)
+
 
     //dma_start_channel_mask(3);
 

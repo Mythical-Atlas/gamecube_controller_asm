@@ -9,7 +9,7 @@
 
 extern uint8_t POLL_RESPONSE_START[8];
 
-uint8_t fake_spi_tx[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+uint8_t fake_spi_tx[8] __attribute__ ((aligned (8))) = {0, 0, 0, 0, 0, 0, 0, 0};
 
 extern void controller_sim();
 
@@ -32,11 +32,13 @@ void main()
     channel_config_set_dreq(&c, spi_get_dreq(spi_default, false));
     channel_config_set_read_increment(&c, false);
     channel_config_set_write_increment(&c, true);
+    channel_config_set_ring(&c, true, 3);
     dma_channel_configure(dma_rx, &c, POLL_RESPONSE_START, &spi_get_hw(spi_default)->dr, 8, false);
 
     c = dma_channel_get_default_config(dma_tx);
     channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
     channel_config_set_dreq(&c, spi_get_dreq(spi_default, true));
+    channel_config_set_ring(&c, false, 3);
     dma_channel_configure(dma_tx, &c, &spi_get_hw(spi_default)->dr, fake_spi_tx, 8, false);
 
 	controller_sim();

@@ -7,9 +7,9 @@
 
 #include "bt_hid.h"
 
-uint8_t POLL_RESPONSE_START[8] = {0x00, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00, 0x00};
+uint8_t POLL_RESPONSE_START[8] __attribute__ ((aligned (8))) = {0x00, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00, 0x00};
 
-uint8_t fake_spi_rx[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+uint8_t fake_spi_rx[8] __attribute__ ((aligned (8))) = {0, 0, 0, 0, 0, 0, 0, 0};
 
 void dma_handler()
 {
@@ -38,6 +38,7 @@ int main() {
     channel_config_set_read_increment(&c, false);
     channel_config_set_write_increment(&c, true);
     channel_config_set_chain_to(&c, dma_rx_2);
+    channel_config_set_ring(&c, true, 3);
     dma_channel_configure(dma_rx_1, &c, fake_spi_rx, &spi_get_hw(spi_default)->dr, 8, false);
 
     c = dma_channel_get_default_config(dma_rx_2);
@@ -46,18 +47,21 @@ int main() {
     channel_config_set_read_increment(&c, false);
     channel_config_set_write_increment(&c, true);
     channel_config_set_chain_to(&c, dma_rx_1);
+    channel_config_set_ring(&c, true, 3);
     dma_channel_configure(dma_rx_2, &c, fake_spi_rx, &spi_get_hw(spi_default)->dr, 8, false);
 
     c = dma_channel_get_default_config(dma_tx_1);
     channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
     channel_config_set_dreq(&c, spi_get_dreq(spi_default, true));
     channel_config_set_chain_to(&c, dma_tx_2);
+    channel_config_set_ring(&c, false, 3);
     dma_channel_configure(dma_tx_1, &c, &spi_get_hw(spi_default)->dr, POLL_RESPONSE_START, 8, false);
 
     c = dma_channel_get_default_config(dma_tx_2);
     channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
     channel_config_set_dreq(&c, spi_get_dreq(spi_default, true));
     channel_config_set_chain_to(&c, dma_tx_1);
+    channel_config_set_ring(&c, false, 3);
     dma_channel_configure(dma_tx_2, &c, &spi_get_hw(spi_default)->dr, POLL_RESPONSE_START, 8, false);
 
     dma_start_channel_mask((1u << dma_tx_1) | (1u << dma_rx_1));
