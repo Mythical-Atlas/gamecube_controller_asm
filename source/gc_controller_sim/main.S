@@ -6,7 +6,7 @@
 .syntax unified
 .thumb_func
 
-.equ GPIO_PIN_NUMBER, 28
+.equ GPIO_PIN_NUMBER, 27
 
 .equ PACKET_BUFFER_SIZE,        4               // we should only ever need to read a maximum of 25 bits (3 bytes + a stop bit) from the gamecube
                                                 // also, this is a very convenient size for checking the packet (it's the size of a register)

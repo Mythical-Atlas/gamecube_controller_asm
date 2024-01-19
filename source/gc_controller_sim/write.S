@@ -6,8 +6,8 @@ init_write:
         movs r5, r0                             // address
         movs r6, r1                             // size
 
-        cmp r6, #POLL_RESPONSE_SIZE
-        bne skip_mutex_enter
+        //cmp r6, #POLL_RESPONSE_SIZE
+        //bne skip_mutex_enter
 
  //       ldr r0, =CONTROLLER_MUTEX_ASM
         //movs r1, #10

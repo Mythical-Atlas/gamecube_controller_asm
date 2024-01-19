@@ -31,8 +31,4 @@ struct bt_hid_state {
 };
 
 extern struct bt_hid_state latest;
-extern mutex_t CONTROLLER_MUTEX_ASM;
 extern uint8_t POLL_RESPONSE_START[8];
-
-// Get the latest controller state
-void bt_hid_get_latest(struct bt_hid_state *dst);

@@ -174,7 +174,28 @@ static void hid_host_handle_interrupt_report(const uint8_t *packet, uint16_t pac
         .right_y = report->right_y,
     };
 
-    POLL_RESPONSE_START[0] = 0 + (latest.plus << 4) + (latest.y << 3) + (latest.x << 2) + (latest.b << 1) + (latest.a << 0);
+    uint8_t dpad_nib = 0b0000; // neutral
+    switch(latest.dpad)
+    {
+        case 0: dpad_nib = 0b1000; break; // up
+        case 1: dpad_nib = 0b1010; break;
+        case 2: dpad_nib = 0b0010; break; // right
+        case 3: dpad_nib = 0b0110; break;
+        case 4: dpad_nib = 0b0100; break; // down
+        case 5: dpad_nib = 0b0101; break;
+        case 6: dpad_nib = 0b0001; break; // left
+        case 7: dpad_nib = 0b1001; break;
+        // 8 = neutral
+    }
+
+    POLL_RESPONSE_START[0] = (latest.plus << 4) + (latest.y << 3) + (latest.x << 2) + (latest.b << 1) + (latest.a << 0);
+    POLL_RESPONSE_START[1] = 0x80 + (latest.zl << 6) + (latest.zr << 5) + ((latest.r | latest.l) << 4) + dpad_nib;
+    POLL_RESPONSE_START[2] = latest.left_x;
+    POLL_RESPONSE_START[3] = latest.left_y;
+    POLL_RESPONSE_START[4] = latest.right_x;
+    POLL_RESPONSE_START[5] = latest.right_y;
+    POLL_RESPONSE_START[6] = latest.zl * 255;
+    POLL_RESPONSE_START[7] = latest.zr * 255;
 
     //mutex_exit(&CONTROLLER_MUTEX_ASM);
 }

@@ -1,7 +1,6 @@
 add_executable(gc_controller_sim
 	${CMAKE_SOURCE_DIR}/source/gc_controller_sim/main.c
 	${CMAKE_SOURCE_DIR}/source/gc_controller_sim/main.S
-	${CMAKE_SOURCE_DIR}/source/gc_controller_sim/bt_hid.c
 	${COMMON_SRC_DIRECTORY}/sdk_inlines.c
 )
 
@@ -13,10 +12,7 @@ target_include_directories(gc_controller_sim PRIVATE
 target_link_libraries(gc_controller_sim
     pico_stdlib
     hardware_gpio
-	pico_cyw43_arch_none
-        pico_btstack_classic
-        pico_btstack_ble
-        pico_btstack_cyw43
+    hardware_spi
 	pico_multicore
 )
 
