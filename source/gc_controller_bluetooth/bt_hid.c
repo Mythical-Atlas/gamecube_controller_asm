@@ -52,6 +52,7 @@
 #include "btstack.h"
 #include "classic/sdp_server.h"
 #include "hardware/spi.h"
+#include "hardware/dma.h"
 
 #include "bt_hid.h"
 
@@ -208,7 +209,9 @@ static void hid_host_handle_interrupt_report(const uint8_t *packet, uint16_t pac
     POLL_RESPONSE_START[6] = 0x00;//((report->buttons[0] >> 6) & 1) * 255; // zl (analog)
     POLL_RESPONSE_START[7] = 0x00;//((report->buttons[0] >> 7) & 1) * 255; // zr (analog)
 
-    spi_write_blocking(spi_default, POLL_RESPONSE_START, 8);
+    //dma_start_channel_mask(3);
+
+    //spi_write_blocking(spi_default, POLL_RESPONSE_START, 8);
 
     //mutex_exit(&CONTROLLER_MUTEX_ASM);
 }

@@ -12,6 +12,7 @@ target_link_libraries(gc_controller_bluetooth
     pico_stdlib
     hardware_gpio
     hardware_spi
+    hardware_dma
 	pico_cyw43_arch_none
         pico_btstack_classic
         pico_btstack_ble
