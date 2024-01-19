@@ -21,9 +21,11 @@ I wanted to do this project with only one Pico, but I had a lot of trouble imple
 
 * All of the code is sloppy and undocumented. It will be tweaked and cleaned up for other people to use.
 
-* The connection between the Picos seems to be somewhat unstable. Sometimes packets are dropped or the bytes are sent in the wrong order.
+* The connection between the Picos is delicate. If one of the Picos loses power, both need to be reset because the SPI transfers get out of order.
 
 * PCB and 3D printed case!
+
+* Rumble support.
 
 ## Resources
 

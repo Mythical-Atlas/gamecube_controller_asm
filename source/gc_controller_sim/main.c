@@ -19,6 +19,8 @@ void main()
 
     spi_init(spi_default, 10000000); // 10 MHz
 
+    //save_and_disable_interrupts();
+
     gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
     gpio_set_function(PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI);
     gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);

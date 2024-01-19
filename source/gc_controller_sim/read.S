@@ -132,8 +132,11 @@ check_received_poll:
 
         // we've read 25 bits!
 
+        ldr r4, =0xfffcffff                     // ignore rumble bits
+        ands r3, r4
+
         ldr r4, =0x80000340                     // check if the packet buffer contains 0x40, 0x03, and 0x00 followed by a stop bit
-        cmp r3, r4                              // TODO: lower two bits are rumble, and are not taken into account
+        cmp r3, r4
         beq packet_buffer_is_poll
         b packet_buffer_is_garbage
 

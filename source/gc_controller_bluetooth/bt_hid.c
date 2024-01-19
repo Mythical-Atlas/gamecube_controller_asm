@@ -202,10 +202,10 @@ static void hid_host_handle_interrupt_report(const uint8_t *packet, uint16_t pac
 
     POLL_RESPONSE_START[0] =
         (((report->buttons[1] >> 1) & 1) << 4) + // plus
-        (((report->buttons[0] >> 3) & 1) << 3) + // y
-        (((report->buttons[0] >> 2) & 1) << 2) + // x
-        (((report->buttons[0] >> 1) & 1) << 1) + // b
-        ((report->buttons[0] >> 0) & 1); // a
+        (((report->buttons[0] >> 2) & 1) << 3) + // one of these is x...
+        (((report->buttons[0] >> 3) & 1) << 2) + // ...the other is y
+        (((report->buttons[0] >> 0) & 1) << 1) + // one of these is a...
+        ((report->buttons[0] >> 1) & 1); // ...the other is b
     
     POLL_RESPONSE_START[1] = 0x80 +
         (((report->buttons[0] >> 6) & 1) << 6) + // zl (l)
