@@ -13,6 +13,7 @@ target_link_libraries(gc_controller_sim
     pico_stdlib
     hardware_gpio
     hardware_spi
+    hardware_dma
 	pico_multicore
 )
 

@@ -11,7 +11,7 @@ uint8_t POLL_RESPONSE_START[8];
 int main() {
     stdio_init_all();
 
-    spi_init(spi_default, 1000000); // 1 MHz
+    spi_init(spi_default, 40000000); // 40 MHz
     spi_set_slave(spi_default, true);
 
     gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
@@ -25,6 +25,6 @@ int main() {
 
     while(true)
     {
-        spi_write_blocking(spi_default, POLL_RESPONSE_START, 8);
+        //spi_write_blocking(spi_default, POLL_RESPONSE_START, 8);
     }
 }

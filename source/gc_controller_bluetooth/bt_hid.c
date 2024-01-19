@@ -51,6 +51,7 @@
 #include "btstack_config.h"
 #include "btstack.h"
 #include "classic/sdp_server.h"
+#include "hardware/spi.h"
 
 #include "bt_hid.h"
 
@@ -152,7 +153,7 @@ static void hid_host_handle_interrupt_report(const uint8_t *packet, uint16_t pac
 
     //mutex_enter_blocking(&CONTROLLER_MUTEX_ASM);
 
-    latest = (struct bt_hid_state){
+    /*latest = (struct bt_hid_state){
         .a =  (report->buttons[0] >> 0) & 1,
         .b =  (report->buttons[0] >> 1) & 1,
         .x =  (report->buttons[0] >> 2) & 1,
@@ -172,10 +173,10 @@ static void hid_host_handle_interrupt_report(const uint8_t *packet, uint16_t pac
         .left_y = report->left_y,
         .right_x = report->right_x,
         .right_y = report->right_y,
-    };
+    };*/
 
     uint8_t dpad_nib = 0b0000; // neutral
-    switch(latest.dpad)
+    switch(report->dpad)
     {
         case 0: dpad_nib = 0b1000; break; // up
         case 1: dpad_nib = 0b1010; break;
@@ -188,14 +189,26 @@ static void hid_host_handle_interrupt_report(const uint8_t *packet, uint16_t pac
         // 8 = neutral
     }
 
-    POLL_RESPONSE_START[0] = (latest.plus << 4) + (latest.y << 3) + (latest.x << 2) + (latest.b << 1) + (latest.a << 0);
-    POLL_RESPONSE_START[1] = 0x80 + (latest.zl << 6) + (latest.zr << 5) + ((latest.r | latest.l) << 4) + dpad_nib;
-    POLL_RESPONSE_START[2] = latest.left_x;
-    POLL_RESPONSE_START[3] = latest.left_y;
-    POLL_RESPONSE_START[4] = latest.right_x;
-    POLL_RESPONSE_START[5] = latest.right_y;
-    POLL_RESPONSE_START[6] = latest.zl * 255;
-    POLL_RESPONSE_START[7] = latest.zr * 255;
+    POLL_RESPONSE_START[0] =
+        (((report->buttons[1] >> 1) & 1) << 4) + // plus
+        (((report->buttons[0] >> 3) & 1) << 3) + // y
+        (((report->buttons[0] >> 2) & 1) << 2) + // x
+        (((report->buttons[0] >> 1) & 1) << 1) + // b
+        ((report->buttons[0] >> 0) & 1); // a
+    
+    POLL_RESPONSE_START[1] = 0x80 +
+        (((report->buttons[0] >> 6) & 1) << 6) + // zl (l)
+        (((report->buttons[0] >> 7) & 1) << 5) + // zr (r)
+        ((((report->buttons[0] >> 4) & 1) | ((report->buttons[0] >> 5) & 1)) << 4) + // l and r
+        dpad_nib;
+    POLL_RESPONSE_START[2] = 0x80;//report->left_x;
+    POLL_RESPONSE_START[3] = 0x80;//255 - report->left_y;
+    POLL_RESPONSE_START[4] = 0x80;//report->right_x;
+    POLL_RESPONSE_START[5] = 0x80;//255 - report->right_y;
+    POLL_RESPONSE_START[6] = 0x00;//((report->buttons[0] >> 6) & 1) * 255; // zl (analog)
+    POLL_RESPONSE_START[7] = 0x00;//((report->buttons[0] >> 7) & 1) * 255; // zr (analog)
+
+    spi_write_blocking(spi_default, POLL_RESPONSE_START, 8);
 
     //mutex_exit(&CONTROLLER_MUTEX_ASM);
 }
