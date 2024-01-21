@@ -1,7 +1,6 @@
 #include "macro_functions.S"
 #include "read.S"
 #include "write.S"
-#include "controller.S"
 
 .syntax unified
 .thumb_func
@@ -38,18 +37,9 @@ controller_sim:
         movs r0, #GPIO_PIN_NUMBER               // init gpio pin
         bl gpio_init
 
-/*
-        movs r0, #1                             // disable interrupts
-        ldr r1, =0xe000e180                     // unsure how necessary disabling interrupts actually is, but
-        str r0, [r1]                            //   just to be on the safe side...
-*/
-
         b init_read
 
-// used for calling printf to print the packet to uart
-PRINT_PACKET_STRING: .asciz "0x%08X\n"
-DEBUG_STR: .asciz "send me controlelr data\n"
-DEBUG_STR2: .asciz "stop sending me controlelr data\n"
+PRINT_PACKET_STRING:    .asciz "0x%08X\n"       // used with printf
 
 .data
 
@@ -60,9 +50,7 @@ PACKET_BITS:    .byte 0                         // the number of bits we've read
                                                 // these bits: 0b00011000 can be checked to get the current byte offset
 
 READ_STATE:     .byte 0                         // current state of packet-reading state machine
-WRITE_STATE:    .byte 0                         // what have we sent to the gamecube?
-
-DEBUG_STATE:    .byte 0                         // used to simulate sending button presses
+WRITE_STATE:    .byte 0                         // indicates what response we're going to send to the gamecube
 
 // length: 25 bits (including stop bit)
 PROBE_RESPONSE:         .byte 0b00001001        // response
@@ -83,6 +71,8 @@ ORIGIN_RESPONSE:        .byte 0b00000000        // 0, 0, 0, start, y, x, b, a
                         .byte 0b10000000        // stop bit
 
 // length: 65 bits (including stop bit)
+.align 8 // TODO: test this
+.global POLL_RESPONSE
 POLL_RESPONSE:          .byte 0b00000000        // 0, 0, 0, start, y, x, b, a
                         .byte 0b10000000        // 1, l, r, z, d-up, d-down, d-right, d-left
                         .byte 0b10000000        // joy x (128 -> center)
@@ -92,19 +82,3 @@ POLL_RESPONSE:          .byte 0b00000000        // 0, 0, 0, start, y, x, b, a
                         .byte 0b00000000        // left trigger (0 -> off)
                         .byte 0b00000000        // right trigger (0 -> off)
                         .byte 0b10000000        // stop bit
-
-// length: 65 bits (including stop bit)
-.global POLL_RESPONSE_START
-POLL_RESPONSE_START:    .byte 0b00000000        // 0, 0, 0, start, y, x, b, a
-                        .byte 0b10000000        // 1, l, r, z, d-up, d-down, d-right, d-left
-                        .byte 0b10000000        // joy x (128 -> center)
-                        .byte 0b10000000        // joy y (128 -> center)
-                        .byte 0b10000000        // c x (128 -> center)
-                        .byte 0b10000000        // c y (128 -> center)
-                        .byte 0b00000000        // left trigger (0 -> off)
-                        .byte 0b00000000        // right trigger (0 -> off)
-                        .byte 0b10000000        // stop bit
-
-.align 4
-.global CONTROLLER_MUTEX_ASM
-CONTROLLER_MUTEX_ASM: .byte 0, 0, 0, 0, 0, 0, 0, 0 // sizeof(mutex_t) = 8

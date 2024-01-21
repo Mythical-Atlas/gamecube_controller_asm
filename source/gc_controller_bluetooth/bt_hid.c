@@ -200,47 +200,41 @@ static void hid_host_handle_interrupt_report(const uint8_t *packet, uint16_t pac
     if(right_x > 0x60 && right_x < 0xa0) right_x = 0x80;
     if(right_y > 0x60 && right_y < 0xa0) right_y = 0x80;
 
-    POLL_RESPONSE_START[0] =
+    POLL_RESPONSE[0] =
         (((report->buttons[1] >> 1) & 1) << 4) + // plus
         (((report->buttons[0] >> 2) & 1) << 3) + // one of these is x...
         (((report->buttons[0] >> 3) & 1) << 2) + // ...the other is y
         (((report->buttons[0] >> 0) & 1) << 1) + // one of these is a...
         ((report->buttons[0] >> 1) & 1); // ...the other is b
     
-    POLL_RESPONSE_START[1] = 0x80 +
+    POLL_RESPONSE[1] = 0x80 +
         (((report->buttons[0] >> 6) & 1) << 6) + // zl (l)
         (((report->buttons[0] >> 7) & 1) << 5) + // zr (r)
         ((((report->buttons[0] >> 4) & 1) | ((report->buttons[0] >> 5) & 1)) << 4) + // l and r
         dpad_nib;
 
-    POLL_RESPONSE_START[2] = left_x;
-    POLL_RESPONSE_START[3] = left_y;
-    POLL_RESPONSE_START[4] = right_x;
-    POLL_RESPONSE_START[5] = right_y;
+    POLL_RESPONSE[2] = left_x;
+    POLL_RESPONSE[3] = left_y;
+    POLL_RESPONSE[4] = right_x;
+    POLL_RESPONSE[5] = right_y;
 
-    POLL_RESPONSE_START[6] = ((report->buttons[0] >> 6) & 1) * 255; // zl (analog)
-    POLL_RESPONSE_START[7] = ((report->buttons[0] >> 7) & 1) * 255; // zr (analog)
-
-
-    //dma_start_channel_mask(3);
-
-    //spi_write_blocking(spi_default, POLL_RESPONSE_START, 8);
-
-    //mutex_exit(&CONTROLLER_MUTEX_ASM);
+    POLL_RESPONSE[6] = ((report->buttons[0] >> 6) & 1) * 255; // zl (analog)
+    POLL_RESPONSE[7] = ((report->buttons[0] >> 7) & 1) * 255; // zr (analog)
 }
 
 static void bt_hid_disconnected(bd_addr_t addr)
 {
-    /*
 	hid_host_cid = 0;
 	hid_host_descriptor_available = false;
 
-    mutex_enter_blocking(&CONTROLLER_MUTEX_ASM);
-
-	memcpy(&latest, &default_state, sizeof(latest));
-
-    mutex_exit(&CONTROLLER_MUTEX_ASM);
-    */
+    POLL_RESPONSE[0] = 0x00;
+    POLL_RESPONSE[1] = 0x80;
+    POLL_RESPONSE[2] = 0x80;
+    POLL_RESPONSE[3] = 0x80;
+    POLL_RESPONSE[4] = 0x80;
+    POLL_RESPONSE[5] = 0x80;
+    POLL_RESPONSE[6] = 0x00;
+    POLL_RESPONSE[7] = 0x00;
 }
 
 static void try_connect()

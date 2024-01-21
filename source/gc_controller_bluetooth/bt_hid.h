@@ -31,4 +31,4 @@ struct bt_hid_state {
 };
 
 extern struct bt_hid_state latest;
-extern uint8_t POLL_RESPONSE_START[8];
+extern uint8_t POLL_RESPONSE[8];

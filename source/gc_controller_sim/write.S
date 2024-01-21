@@ -6,17 +6,6 @@ init_write:
         movs r5, r0                             // address
         movs r6, r1                             // size
 
-        //cmp r6, #POLL_RESPONSE_SIZE
-        //bne skip_mutex_enter
-
- //       ldr r0, =CONTROLLER_MUTEX_ASM
-        //movs r1, #10
- //       bl mutex_enter_blocking
-        //cmp r0, #0
-        //bne skip_mutex_enter
-        //b init_read // mutex lock failed
-
-skip_mutex_enter:
         movs r0, #CYCLES_TO_WAIT_BEFORE_WRITE
         bl sleep_for_cycles
 
@@ -79,27 +68,16 @@ write_finish_packet:
         ldr r1, =0xe000e018                     // load the address of the systick current value register
         str r0, [r1]                            // reset the systick counter to 0 (writing any value to this register works)
 
+#if DEBUG_MODE != 2
         cmp r6, #POLL_RESPONSE_SIZE
-        bne skip_controller_check
+        bne skip_controller_read
 
-        // read controller data
-        movs r0, #3
+        movs r0, #3                             // start dma to read controller data
         ldr r1, =0x50000430
-        str r0, [r1] // start rx and tx dma channels (chan 0 and chan 1)
+        str r0, [r1]                            // trigger rx and tx dma channels at the same time (chan 0 and chan 1)
+#endif
 
- //       ldr r0, =CONTROLLER_MUTEX_ASM
- //       bl mutex_exit
-
-skip_mutex_exit:
-
-        // DEBUG: disabling this check, 
-/*
-        cmp r6, #PROBE_RESPONSE_SIZE            // easiest way to check if we just sent a probe response
-        beq skip_controller_check
-        bl get_controller_state                 // only get controller state if we just sent an origin response or a poll response
-*/
-
-skip_controller_check:
+skip_controller_read:
         b init_read
 
 write_low:

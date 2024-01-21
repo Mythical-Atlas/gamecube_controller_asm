@@ -64,10 +64,7 @@ check_waiting_bit_end_write:                    // note: at this point it can be
         cmp r0, #WS_SEND_ORIGIN_RESPONSE
         beq bit_end_send_origin_response
 
-        //cmp r0, #WS_SEND_POLL_RESPONSE
-        //beq bit_end_send_poll_response
-
-        b bit_end_send_poll_response_dbg // DEBUG
+        b bit_end_send_poll_response
 
 bit_end_send_probe_response:
         ldr r0, =PROBE_RESPONSE
@@ -84,11 +81,6 @@ bit_end_send_poll_response:
         movs r1, #POLL_RESPONSE_SIZE
         b init_write
 
-bit_end_send_poll_response_dbg:
-        ldr r0, =POLL_RESPONSE_START
-        movs r1, #POLL_RESPONSE_SIZE
-        b init_write
-
 latch_bit:
         movs r0, #GPIO_PIN_NUMBER               // read gpio pin
         bl gpio_get_state
@@ -99,7 +91,7 @@ latch_bit:
 
         ldr r2, =PACKET_BUFFER                  // get the current byte
         ldrb r3, [r2, r1]
-             
+            
         ldrb r6, [r5]                           // get the bit offset for us to write to
         movs r4, #0b111                         // using bits 0b00000111
         ands r6, r6, r4
@@ -113,6 +105,12 @@ latch_bit:
         ldrb r1, [r5]                           // increment the bit/byte counter
         adds r1, r1, #1
         strb r1, [r5]
+
+#if DEBUG_MODE == 2
+        bl print_packet
+        bl clear_packet_buffer
+        b finish_packet_checks_read
+#endif
 
 check_receieved_probe:       
         ldr r3, [r2]                            // check if the packet buffer contains 0x8000 (0x00 followed by a stop bit)
@@ -141,7 +139,6 @@ check_received_poll:
         b packet_buffer_is_garbage
 
 packet_buffer_is_probe:
-        //bl print_packet                       // DEBUG: no time to do this! gamecube doesn't recognize probe response if we print
         bl clear_packet_buffer
 
         movs r0, #WS_SEND_PROBE_RESPONSE        // set write state to send a probe response after end of bit
@@ -151,7 +148,6 @@ packet_buffer_is_probe:
         b finish_packet_checks_write
 
 packet_buffer_is_origin:
-        //bl print_packet                       // DEBUG: no time to do this! gamecube doesn't recognize probe response if we print
         bl clear_packet_buffer
 
         movs r0, #WS_SEND_ORIGIN_RESPONSE       // set write state to send a probe response after end of bit
@@ -161,19 +157,7 @@ packet_buffer_is_origin:
         b finish_packet_checks_write
 
 packet_buffer_is_poll:
-        //bl print_packet                       // DEBUG: no time to do this! gamecube doesn't recognize probe response if we print
         bl clear_packet_buffer
-
-        ldr r0, =DEBUG_STATE                    // DEBUG: check what controller state to send
-        ldrb r1, [r0]
-
-        movs r2, #0x7f
-        ands r1, r1, r2
-        bne debug_send_controller_state_1
-
-debug_send_controller_state_0:
-        adds r1, #1
-        strb r1, [r0]
 
         movs r0, #WS_SEND_POLL_RESPONSE         // set write state to send a probe response after end of bit
         ldr r1, =WRITE_STATE
@@ -181,18 +165,10 @@ debug_send_controller_state_0:
 
         b finish_packet_checks_write
 
-debug_send_controller_state_1: // DEBUG
-        adds r1, #1
-        strb r1, [r0]
-
-        movs r0, #WS_SEND_POLL_RESPONSE_DBG     // set write state to send a probe response after end of bit
-        ldr r1, =WRITE_STATE
-        strb r0, [r1]
-
-        b finish_packet_checks_write
-
 packet_buffer_is_garbage:
-        //bl print_packet // DEBUG: disabled
+#if DEBUG_MODE == 1
+        bl print_packet
+#endif
         bl clear_packet_buffer
 
         b finish_packet_checks_read
