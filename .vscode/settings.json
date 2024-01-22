@@ -17,7 +17,8 @@
         "multicore.h": "c",
         "btstack.h": "c",
         "spi.h": "c",
-        "dma.h": "c"
+        "dma.h": "c",
+        "async_context.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
 }
