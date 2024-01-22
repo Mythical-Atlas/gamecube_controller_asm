@@ -152,30 +152,6 @@ static void hid_host_handle_interrupt_report(const uint8_t *packet, uint16_t pac
 
 	struct input_report_17 *report = (struct input_report_17 *)&packet[0];
 
-    //mutex_enter_blocking(&CONTROLLER_MUTEX_ASM);
-
-    /*latest = (struct bt_hid_state){
-        .a =  (report->buttons[0] >> 0) & 1,
-        .b =  (report->buttons[0] >> 1) & 1,
-        .x =  (report->buttons[0] >> 2) & 1,
-        .y =  (report->buttons[0] >> 3) & 1,
-        .l =  (report->buttons[0] >> 4) & 1,
-        .r =  (report->buttons[0] >> 5) & 1,
-        .zl = (report->buttons[0] >> 6) & 1,
-        .zr = (report->buttons[0] >> 7) & 1,
-        .sl =         (report->buttons[1] >> 2) & 1,
-        .sr =         (report->buttons[1] >> 3) & 1,
-        .minus =      (report->buttons[1] >> 0) & 1,
-        .plus =       (report->buttons[1] >> 1) & 1,
-        .home =       (report->buttons[1] >> 4) & 1,
-        .screenshot = (report->buttons[1] >> 5) & 1,
-        .dpad = report->dpad,
-        .left_x = report->left_x,
-        .left_y = report->left_y,
-        .right_x = report->right_x,
-        .right_y = report->right_y,
-    };*/
-
     uint8_t dpad_nib = 0b0000; // neutral
     switch(report->dpad)
     {
@@ -253,6 +229,9 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 {
 	if(packet_type != HCI_EVENT_PACKET) return;
 
+    uint8_t status;
+    uint8_t hid_event;
+
 	uint8_t event = hci_event_packet_get_type(packet);
 	switch(event)
     {
@@ -263,7 +242,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 		}
 		break;
 	case HCI_EVENT_CONNECTION_COMPLETE:
-		uint8_t status = hci_event_connection_complete_get_status(packet);
+		status = hci_event_connection_complete_get_status(packet);
 		printf("Connection complete: %x\n", status);
 
         if(status == 4)
@@ -282,7 +261,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 
 		break;
 	case HCI_EVENT_HID_META:
-		uint8_t hid_event = hci_event_hid_meta_get_subevent_code(packet);
+		hid_event = hci_event_hid_meta_get_subevent_code(packet);
 		switch(hid_event)
         {
 		case HID_SUBEVENT_CONNECTION_OPENED:
