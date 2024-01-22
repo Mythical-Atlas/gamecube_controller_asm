@@ -276,6 +276,12 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
 	case HCI_EVENT_CONNECTION_COMPLETE:
 		status = hci_event_connection_complete_get_status(packet);
 		printf("Connection complete: %x\n", status);
+
+        if(status == 4)
+        {
+            try_connect();
+        }
+
 		break;
 	case HCI_EVENT_DISCONNECTION_COMPLETE:
 		status = hci_event_disconnection_complete_get_status(packet);
@@ -283,7 +289,7 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
 		printf("Disconnection complete: status: %x, reason: %x\n", status, reason);
 
         bt_hid_disconnected(connected_addr);
-        //try_connect();
+        try_connect();
 
 		break;
 	case HCI_EVENT_MAX_SLOTS_CHANGED:
@@ -302,7 +308,6 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
 			if (status != ERROR_CODE_SUCCESS) {
 				printf("Connection to %s failed: 0x%02x\n", bd_addr_to_str(event_addr), status);
 				bt_hid_disconnected(event_addr);
-                //try_connect();
 				return;
 			}
 			hid_host_descriptor_available = false;
