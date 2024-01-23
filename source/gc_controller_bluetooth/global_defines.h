@@ -3,4 +3,4 @@
     1 -> print input events, but otherwise normal operation
     2 -> don't send anything and don't use dma/spi, just print input events
 */
-#define DEBUG_MODE 2
+#define DEBUG_MODE 0
