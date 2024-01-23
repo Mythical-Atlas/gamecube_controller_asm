@@ -1,10 +1,12 @@
 # Bluetooth GameCube Controller Adapter
 
-Note: Even though this photo shows a USB adapter, this has been tested with real hardware. I found a USB adapter to be really useful for debugging, and it potentially saved me from frying my GameCube a few times, too!
+![Photo of the adapter circuit.](clean debug breadboard.jpg)
 
-![Photo of the adapter circuit.](20240118_194919.jpg)
+![Breadboard circuit diagram.](fritzing breadboard.png)
 
 I plan on doing a more official write-up of this project in the future! But here is some basic information:
+
+This circuit has been tested with a Nintendo Switch controller and a physical GameCube console. However, I found a USB adapter to be really useful for debugging, and it potentially saved me from frying my GameCube a few times, too!
 
 This was a personal project that I set out on for fun. It also ended up being way more of a challenge than I expected.
 The idea is simple: I wanted a way to connect my Nintendo Switch controller to my GameCube.
