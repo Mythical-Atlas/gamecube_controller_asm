@@ -1,8 +1,8 @@
 # Bluetooth GameCube Controller Adapter
 
-![Photo of the adapter circuit.](clean debug breadboard.jpg)
+![Photo of the adapter circuit.](clean_debug_breadboard.jpg)
 
-![Breadboard circuit diagram.](fritzing breadboard.png)
+![Breadboard circuit diagram.](fritzing_breadboard.png)
 
 I plan on doing a more official write-up of this project in the future! But here is some basic information:
 
