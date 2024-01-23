@@ -20,7 +20,9 @@
         "dma.h": "c",
         "async_context.h": "c",
         "bt_hid.h": "c",
-        "sync.h": "c"
+        "sync.h": "c",
+        "stdint.h": "c",
+        "inttypes.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
 }

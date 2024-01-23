@@ -1,45 +1,40 @@
+#include <inttypes.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "pico/stdlib.h"
+#include "pico/cyw43_arch.h"
+#include "pico/async_context.h"
+
 #include "switch_controller.h"
 #include "bt_hid.h"
 #include "global_defines.h"
 
-static void handle_controller_input(const uint8_t *packet, uint16_t packet_len) {
+const char* remote_addr_string = "98:41:5C:B4:83:04";
+
+const uint8_t report_header[9] = {0xef, 0x11, 0x0c, 0x01, 0x00, 0x0c, 0x00, 0xa1, 0x3f};
+
+const uint8_t dpad_values[9] =
+{
+    0b1000, // up
+    0b1010, // ur
+    0b0010, // right
+    0b0110, // dr
+    0b0100, // down
+    0b0101, // dl
+    0b0001, // left
+    0b1001, // ul
+    0b0000  // neutral
+};
+
+void handle_controller_input(const uint8_t *packet, uint16_t packet_len)
+{
+    // make sure we're only handling a specific type of report (the one that has controller data)
 	if(packet_len != 20) return;
+    if(memcmp(packet, report_header, 9)) return;
 
-	if( (packet[0] != 0xef) ||
-        (packet[1] != 0x11) ||
-        (packet[2] != 0x0c) ||
-        (packet[3] != 0x01) ||
-        (packet[4] != 0x00) ||
-        (packet[5] != 0x0c) ||
-        (packet[6] != 0x00) ||
-        (packet[7] != 0xa1) ||
-        (packet[8] != 0x3f)    ) return;
-
-	struct input_report_17 *report = (struct input_report_17 *)&packet[0];
-
-    uint8_t dpad_nib = 0b0000; // neutral
-    switch(report->dpad)
-    {
-    case 0: dpad_nib = 0b1000; break; // up
-    case 1: dpad_nib = 0b1010; break;
-    case 2: dpad_nib = 0b0010; break; // right
-    case 3: dpad_nib = 0b0110; break;
-    case 4: dpad_nib = 0b0100; break; // down
-    case 5: dpad_nib = 0b0101; break;
-    case 6: dpad_nib = 0b0001; break; // left
-    case 7: dpad_nib = 0b1001; break;
-    // 8 = neutral
-    }
-
-    uint8_t left_x = report->left_x;
-    uint8_t left_y = 0xff - report->left_y;
-    uint8_t right_x = report->right_x;
-    uint8_t right_y = 0xff - report->right_y;
-
-    if(left_x >= 0x60 && left_x < 0xa0) left_x = 0x80;
-    if(left_y >= 0x60 && left_y < 0xa0) left_y = 0x80;
-    if(right_x >= 0x60 && right_x < 0xa0) right_x = 0x80;
-    if(right_y >= 0x60 && right_y < 0xa0) right_y = 0x80;
+	switch_input_data switch_data = get_switch_controller_data(&packet[9]);
 
 #if DEBUG_MODE > 0
     uint8_t old_controller_state[8];
@@ -47,27 +42,75 @@ static void handle_controller_input(const uint8_t *packet, uint16_t packet_len) 
 #endif
 
     POLL_RESPONSE[0] =
-        (((report->buttons[1] >> 1) & 1) << 4) + // plus
-        (((report->buttons[0] >> 2) & 1) << 3) + // y
-        (((report->buttons[0] >> 3) & 1) << 2) + // x
-        (((report->buttons[0] >> 0) & 1) << 1) + // b
-        ((report->buttons[0] >> 1) & 1); // a
+        (switch_data.plus << 4) +
+        (switch_data.y << 3) +
+        (switch_data.x << 2) +
+        (switch_data.b << 1) +
+        (switch_data.a);
     
+    // note: switch zl and zr become gamecbue l and r, and switch l and r are both used for gamecube z
     POLL_RESPONSE[1] = 0x80 +
-        (((report->buttons[0] >> 6) & 1) << 6) + // zl (l)
-        (((report->buttons[0] >> 7) & 1) << 5) + // zr (r)
-        ((((report->buttons[0] >> 4) & 1) | ((report->buttons[0] >> 5) & 1)) << 4) + // l and r
-        dpad_nib;
+        (switch_data.zl << 6) +
+        (switch_data.zr << 5) +
+        ((switch_data.l | switch_data.r) << 4) +
+        switch_data.dpad;
 
-    POLL_RESPONSE[2] = left_x;
-    POLL_RESPONSE[3] = left_y;
-    POLL_RESPONSE[4] = right_x;
-    POLL_RESPONSE[5] = right_y;
+    POLL_RESPONSE[2] = switch_data.left_x;
+    POLL_RESPONSE[3] = switch_data.left_y;
+    POLL_RESPONSE[4] = switch_data.right_x;
+    POLL_RESPONSE[5] = switch_data.right_y;
 
-    POLL_RESPONSE[6] = ((report->buttons[0] >> 6) & 1) * 255; // zl (analog)
-    POLL_RESPONSE[7] = ((report->buttons[0] >> 7) & 1) * 255; // zr (analog)
+    // note: because switch controllers don't have analog triggers, the analog portion of the data
+    // sent to the gamecube is basically just 'trigger button pressed' = 255
+    POLL_RESPONSE[6] = switch_data.zl * 255; // zl (analog)
+    POLL_RESPONSE[7] = switch_data.zr * 255; // zr (analog)
 
 #if DEBUG_MODE > 0
+    debug_print_input_events(old_controller_state);
+#endif
+}
+
+switch_input_data get_switch_controller_data(const uint8_t *packet)
+{
+    switch_input_data input_data;
+
+    input_data.a =    (packet[0] >> 1) & 1;
+    input_data.b =    (packet[0] >> 0) & 1;
+    input_data.x =    (packet[0] >> 3) & 1;
+    input_data.y =    (packet[0] >> 2) & 1;
+    input_data.zl =   (packet[0] >> 6) & 1;
+    input_data.zr =   (packet[0] >> 7) & 1;
+    input_data.l =    (packet[0] >> 4) & 1;
+    input_data.r =    (packet[0] >> 5) & 1;
+    input_data.plus = (packet[1] >> 1) & 1;
+
+    input_data.dpad = dpad_values[packet[2]];
+
+    input_data.left_x = packet[4];
+    input_data.left_y = packet[6];
+    input_data.right_x = packet[8];
+    input_data.right_y = packet[10];
+
+    modify_joystick(&input_data.left_x, &input_data.left_y);
+    modify_joystick(&input_data.right_x, &input_data.right_y);
+
+    return input_data;
+}
+
+void modify_joystick(uint8_t* joy_x, uint8_t* joy_y)
+{
+    // switch y-axis is inverted compared to gamecube
+    (*joy_y) = 0xff - (*joy_y);
+
+    // note: this makes the deadband cross-shapes instead of circular
+    // this is easily rectified, but because gamecube controllers have notches anyway,
+    // it might be best to leave it like this
+    if((*joy_x) >= DEAD_RANGE_LOWER && (*joy_x) < DEAD_RANGE_UPPER) (*joy_x) = 0x80;
+    if((*joy_y) >= DEAD_RANGE_LOWER && (*joy_y) < DEAD_RANGE_UPPER) (*joy_y) = 0x80;
+}
+
+void debug_print_input_events(uint8_t* old_controller_state)
+{
     if( (POLL_RESPONSE[0] & (1 << 0)) && !(old_controller_state[0] & (1 << 0))) printf("A Pressed\n");
     if(!(POLL_RESPONSE[0] & (1 << 0)) &&  (old_controller_state[0] & (1 << 0))) printf("A Released\n");
     if( (POLL_RESPONSE[0] & (1 << 1)) && !(old_controller_state[0] & (1 << 1))) printf("B Pressed\n");
@@ -108,33 +151,10 @@ static void handle_controller_input(const uint8_t *packet, uint16_t packet_len) 
 
     if(POLL_RESPONSE[2] != old_controller_state[2] || POLL_RESPONSE[3] != old_controller_state[3])
     {
-        uint8_t debug_x = POLL_RESPONSE[2];
-        uint8_t debug_y = POLL_RESPONSE[3];
-
-             if(debug_x == 0x80 && debug_y == 0x80) printf("Left Stick Neutral\n");
-        else if(debug_x == 0x80 && debug_y >  0x80) printf("Left Stick Up\n");
-        else if(debug_x  > 0x80 && debug_y >  0x80) printf("Left Stick Up Right\n");
-        else if(debug_x  > 0x80 && debug_y == 0x80) printf("Left Stick Right\n");
-        else if(debug_x  > 0x80 && debug_y <  0x80) printf("Left Stick Down Right\n");
-        else if(debug_x == 0x80 && debug_y <  0x80) printf("Left Stick Down\n");
-        else if(debug_x  < 0x80 && debug_y <  0x80) printf("Left Stick Down Left\n");
-        else if(debug_x  < 0x80 && debug_y == 0x80) printf("Left Stick Left\n");
-        else if(debug_x  < 0x80 && debug_y >  0x80) printf("Left Stick Up Left\n");
+        printf("Left Stick: (%i, %i)\n", POLL_RESPONSE[2], POLL_RESPONSE[3]);
     }
     if(POLL_RESPONSE[4] != old_controller_state[4] || POLL_RESPONSE[5] != old_controller_state[5])
     {
-        uint8_t debug_x = POLL_RESPONSE[4];
-        uint8_t debug_y = POLL_RESPONSE[5];
-
-             if(debug_x == 0x80 && debug_y == 0x80) printf("Right Stick Neutral\n");
-        else if(debug_x == 0x80 && debug_y >  0x80) printf("Right Stick Up\n");
-        else if(debug_x  > 0x80 && debug_y >  0x80) printf("Right Stick Up Right\n");
-        else if(debug_x  > 0x80 && debug_y == 0x80) printf("Right Stick Right\n");
-        else if(debug_x  > 0x80 && debug_y <  0x80) printf("Right Stick Down Right\n");
-        else if(debug_x == 0x80 && debug_y <  0x80) printf("Right Stick Down\n");
-        else if(debug_x  < 0x80 && debug_y <  0x80) printf("Right Stick Down Left\n");
-        else if(debug_x  < 0x80 && debug_y == 0x80) printf("Right Stick Left\n");
-        else if(debug_x  < 0x80 && debug_y >  0x80) printf("Right Stick Up Left\n");
+        printf("Right Stick: (%i, %i)\n", POLL_RESPONSE[4], POLL_RESPONSE[5]);
     }
-#endif
 }

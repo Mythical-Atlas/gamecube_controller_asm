@@ -1,3 +1,7 @@
+/*  Derived from BlueKitchen's BTstack hid_host_demo (https://github.com/usedbytes/picow_ds4/blob/main/src/bt_hid.c) and from
+    Brian Starkey's DualShock 4 on Pico-W project (https://github.com/usedbytes/picow_ds4/blob/main/src/bt_hid.c) by Ben Correll.
+*/
+
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -16,11 +20,10 @@
 
 #include "bt_hid.h"
 #include "global_defines.h"
+
 #include "switch_controller.h"
 
 #define MAX_ATTRIBUTE_VALUE_SIZE 512
-
-struct bt_hid_state latest;
 
 static bd_addr_t remote_addr;
 static bd_addr_t connected_addr;
@@ -55,7 +58,7 @@ static void hid_host_setup(void){
 	hci_add_event_handler(&hci_event_callback_registration);
 }
 
-static void bt_hid_disconnected(bd_addr_t addr)
+static void handle_disconnect()
 {
 	hid_host_cid = 0;
 	hid_host_descriptor_available = false;
@@ -78,7 +81,7 @@ static void try_connect()
     if (status != ERROR_CODE_SUCCESS)
     {
         printf("hid_host_connect command failed: 0x%02x\n", status);
-        bt_hid_disconnected(connected_addr);
+        handle_disconnect();
     }
 }
 
@@ -113,7 +116,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 		uint8_t reason = hci_event_disconnection_complete_get_reason(packet);
 		printf("Disconnection complete: status: %x, reason: %x\n", status, reason);
 
-        bt_hid_disconnected(connected_addr);
+        handle_disconnect();
         try_connect();
 
 		break;
@@ -130,7 +133,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 			if(status != ERROR_CODE_SUCCESS)
             {
 				printf("Connection to %s failed: 0x%02x\n", bd_addr_to_str(event_addr), status);
-				bt_hid_disconnected(event_addr);
+				handle_disconnect();
 				return;
 			}
 
@@ -156,7 +159,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 			break;
 		case HID_SUBEVENT_CONNECTION_CLOSED:
 			printf("HID connection closed: %s\n", bd_addr_to_str(connected_addr));
-			bt_hid_disconnected(connected_addr);
+			handle_disconnect();
 			break;
 		}
 		break;
