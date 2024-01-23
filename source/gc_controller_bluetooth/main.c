@@ -6,6 +6,7 @@
 #include "hardware/dma.h"
 
 #include "bt_hid.h"
+#include "global_defines.h"
 
 uint8_t POLL_RESPONSE[8] __attribute__ ((aligned (8))) = {0x00, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00, 0x00};
 
@@ -64,7 +65,9 @@ int main() {
     channel_config_set_ring(&c, false, 3);
     dma_channel_configure(dma_tx_2, &c, &spi_get_hw(spi_default)->dr, POLL_RESPONSE, 8, false);
 
+#if DEBUG_MODE != 2
     dma_start_channel_mask((1u << dma_tx_1) | (1u << dma_rx_1));
+#endif
 
     bt_main();
 }

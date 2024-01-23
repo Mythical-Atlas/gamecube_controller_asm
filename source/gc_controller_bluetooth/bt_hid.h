@@ -8,27 +8,4 @@
 
 void bt_main(void);
 
-struct bt_hid_state {
-	bool a;
-    bool b;
-    bool x;
-    bool y;
-    bool l;
-    bool r;
-    bool zl;
-    bool zr;
-    bool sl;
-    bool sr;
-    bool minus;
-    bool plus;
-    bool home;
-    bool screenshot;
-    uint8_t dpad;
-    uint8_t left_x;
-    uint8_t left_y;
-    uint8_t right_x;
-    uint8_t right_y;
-};
-
-extern struct bt_hid_state latest;
 extern uint8_t POLL_RESPONSE[8];

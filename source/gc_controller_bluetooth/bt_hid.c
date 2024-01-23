@@ -1,43 +1,3 @@
-/*
- * Derived from the btstack hid_host_demo:
- * Copyright (C) 2017 BlueKitchen GmbH
- *
- * Modifications Copyright (C) 2021-2023 Brian Starkey <stark3y@gmail.com>
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the copyright holders nor the names of
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- * 4. Any redistribution, use, or modification is done solely for
- *    personal benefit and not for any commercial purpose or for
- *    monetary gain.
- *
- * THIS SOFTWARE IS PROVIDED BY BLUEKITCHEN GMBH AND CONTRIBUTORS
- * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL MATTHIAS
- * RINGWALD OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
- * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- * Please inquire about commercial licensing options at
- * contact@bluekitchen-gmbh.com
- *
- */
-
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -55,26 +15,24 @@
 #include "hardware/dma.h"
 
 #include "bt_hid.h"
+#include "global_defines.h"
+#include "switch_controller.h"
 
 #define MAX_ATTRIBUTE_VALUE_SIZE 512
 
 struct bt_hid_state latest;
-mutex_t controller_mutex;
-
-static const char * remote_addr_string = "98:41:5C:B4:83:04";
 
 static bd_addr_t remote_addr;
 static bd_addr_t connected_addr;
 static btstack_packet_callback_registration_t hci_event_callback_registration;
 
-// SDP
 static uint8_t hid_descriptor_storage[MAX_ATTRIBUTE_VALUE_SIZE];
 
 static uint16_t hid_host_cid = 0;
 static bool     hid_host_descriptor_available = false;
 static hid_protocol_mode_t hid_host_report_mode = HID_PROTOCOL_MODE_REPORT;
 
-static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size);
+static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size);
 
 static void hid_host_setup(void){
 	// Initialize L2CAP
@@ -95,107 +53,6 @@ static void hid_host_setup(void){
 	// register for HCI events
 	hci_event_callback_registration.callback = &packet_handler;
 	hci_add_event_handler(&hci_event_callback_registration);
-}
-
-const struct bt_hid_state default_state = {
-	.a = false,
-    .b = false,
-    .x = false,
-    .y = false,
-    .l = false,
-    .r = false,
-    .zl = false,
-    .zr = false,
-    .sl = false,
-    .sr = false,
-    .minus = false,
-    .plus = false,
-    .home = false,
-    .screenshot = false,
-    .dpad = 0x08,
-    .left_x = 0x7f,
-    .left_y = 0x7f,
-    .right_x = 0x7f,
-    .right_y = 0x7f
-};
-
-struct __attribute__((packed)) input_report_17 {
-	uint8_t header[9];
-	uint8_t buttons[2];
-    uint8_t dpad;
-    uint8_t garb0;
-    uint8_t left_x;
-    uint8_t garb1;
-    uint8_t left_y;
-    uint8_t garb2;
-    uint8_t right_x;
-    uint8_t garb3;
-    uint8_t right_y;
-};
-
-static void hid_host_handle_interrupt_report(const uint8_t *packet, uint16_t packet_len){
-    static struct bt_hid_state last_state = { 0 };
-
-	if(packet_len != 20) return;
-
-	if (
-        (packet[0] != 0xef) ||
-        (packet[1] != 0x11) ||
-        (packet[2] != 0x0c) ||
-        (packet[3] != 0x01) ||
-        (packet[4] != 0x00) ||
-        (packet[5] != 0x0c) ||
-        (packet[6] != 0x00) ||
-        (packet[7] != 0xa1) ||
-        (packet[8] != 0x3f)
-    ) return;
-
-	struct input_report_17 *report = (struct input_report_17 *)&packet[0];
-
-    uint8_t dpad_nib = 0b0000; // neutral
-    switch(report->dpad)
-    {
-        case 0: dpad_nib = 0b1000; break; // up
-        case 1: dpad_nib = 0b1010; break;
-        case 2: dpad_nib = 0b0010; break; // right
-        case 3: dpad_nib = 0b0110; break;
-        case 4: dpad_nib = 0b0100; break; // down
-        case 5: dpad_nib = 0b0101; break;
-        case 6: dpad_nib = 0b0001; break; // left
-        case 7: dpad_nib = 0b1001; break;
-        // 8 = neutral
-    }
-
-    uint8_t left_x = report->left_x;
-    uint8_t left_y = 0xff - report->left_y;
-    uint8_t right_x = report->right_x;
-    uint8_t right_y = 0xff - report->right_y;
-
-    if(left_x > 0x60 && left_x < 0xa0) left_x = 0x80;
-    if(left_y > 0x60 && left_y < 0xa0) left_y = 0x80;
-    if(right_x > 0x60 && right_x < 0xa0) right_x = 0x80;
-    if(right_y > 0x60 && right_y < 0xa0) right_y = 0x80;
-
-    POLL_RESPONSE[0] =
-        (((report->buttons[1] >> 1) & 1) << 4) + // plus
-        (((report->buttons[0] >> 2) & 1) << 3) + // one of these is x...
-        (((report->buttons[0] >> 3) & 1) << 2) + // ...the other is y
-        (((report->buttons[0] >> 0) & 1) << 1) + // one of these is a...
-        ((report->buttons[0] >> 1) & 1); // ...the other is b
-    
-    POLL_RESPONSE[1] = 0x80 +
-        (((report->buttons[0] >> 6) & 1) << 6) + // zl (l)
-        (((report->buttons[0] >> 7) & 1) << 5) + // zr (r)
-        ((((report->buttons[0] >> 4) & 1) | ((report->buttons[0] >> 5) & 1)) << 4) + // l and r
-        dpad_nib;
-
-    POLL_RESPONSE[2] = left_x;
-    POLL_RESPONSE[3] = left_y;
-    POLL_RESPONSE[4] = right_x;
-    POLL_RESPONSE[5] = right_y;
-
-    POLL_RESPONSE[6] = ((report->buttons[0] >> 6) & 1) * 255; // zl (analog)
-    POLL_RESPONSE[7] = ((report->buttons[0] >> 7) & 1) * 255; // zr (analog)
 }
 
 static void bt_hid_disconnected(bd_addr_t addr)
@@ -294,7 +151,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 		case HID_SUBEVENT_REPORT:
             if(hid_host_descriptor_available)
             {
-                hid_host_handle_interrupt_report(packet, size);
+                handle_controller_input(packet, size);
 			}
 			break;
 		case HID_SUBEVENT_CONNECTION_CLOSED:

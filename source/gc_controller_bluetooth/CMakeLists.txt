@@ -1,6 +1,7 @@
 add_executable(gc_controller_bluetooth
 	${CMAKE_SOURCE_DIR}/source/gc_controller_bluetooth/main.c
 	${CMAKE_SOURCE_DIR}/source/gc_controller_bluetooth/bt_hid.c
+	${CMAKE_SOURCE_DIR}/source/gc_controller_bluetooth/switch_controller.c
 )
 
 target_include_directories(gc_controller_bluetooth PRIVATE

@@ -18,7 +18,9 @@
         "btstack.h": "c",
         "spi.h": "c",
         "dma.h": "c",
-        "async_context.h": "c"
+        "async_context.h": "c",
+        "bt_hid.h": "c",
+        "sync.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
 }
